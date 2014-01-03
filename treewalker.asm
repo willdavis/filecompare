@@ -31,7 +31,7 @@ TreeWalker:
 	mov ebx, 100
 	push ebx
 	push dword [Compare]
-	push dword [ebp+8]
+	push dword [ebp+4]
 	call ftw
 	add esp, 12
 	cmp eax, -1
