@@ -1,2 +1,2 @@
-test file to make sure hexdump works correctly!
+TEST file to m@ke sure hexdump works correctly!
 =this part is unique=
