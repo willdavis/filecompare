@@ -54,7 +54,7 @@ main:
 	cmp eax,0		;check error flag
 	jz .compare		;no errors, start comparing the files
 
-	push missingArgError
+	push openFileError
 	call PrintError		;print the error and exit
 	add esp,4
 	jmp .close
