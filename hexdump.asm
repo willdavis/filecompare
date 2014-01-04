@@ -1,6 +1,14 @@
+; Description: recursively hexdump and compare two files (all sub-files also)
+; Author: Bill Davis
+; Prototype: int hexdump(file* source, file* target, file* output)
+; Returns:
+;	 0 = complete, no errors.
+;	-1 = failed.
+
 [SECTION .data]
-debug:	db "hexdump finished! %i missmatches found",10,0
-MissmatchWarning:	db "Src:%x Dest:%x",10,0
+debug_show_start_hexdump : db "Starting comparison for files: %x -> %x",10,0
+debug_show_final_count:	db "Comparison finished! %i missmatches found",10,0
+MissmatchWarning:	db "WARNING: missmatch found (source:'%x' and target:'%x')",10,0
 
 [SECTION .txt]
 extern printf
@@ -12,13 +20,20 @@ global hexdump
 ; int hexdump(file* src, file* dest, file* output)
 hexdump:
 	push ebp
-	mov ebp, esp		;setup stack frame for this function
-	sub esp,4		;local var: inconsistency counter
+	mov ebp, esp	;setup stack frame for this function
+
+	sub esp,4		;local variable: inconsistency counter
 
 	push esi
 	push edi
 
 	mov dword [ebp-4],0	;initialize counter to zero
+
+	push edi
+	push esi
+	push debug_show_start_hexdump
+	call printf
+	add esp,12
 
 	;; while(A && B != EOF){
 	;; 	if(A[i] != B[i])
@@ -27,6 +42,7 @@ hexdump:
 	;; 		printf(MissmatchWarning)
 	;; 	}
 	;; }
+
 .start:
 	;; Check for EOF marker in the two files
 	push dword [ebp+12]	;check for source EOF
@@ -64,7 +80,7 @@ hexdump:
 
 .eof:
 	push dword [ebp-4]	;display missmatch counter
-	push debug
+	push debug_show_final_count
 	call printf
 	add esp,4
 

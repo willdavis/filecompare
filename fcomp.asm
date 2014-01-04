@@ -10,10 +10,12 @@ OutFilePtr:	resd 1		;output file pointer
 	
 [SECTION .data]
 ; Error strings
-missingArgError: db "Error parsing command line arguments.  Argument(s) missing.",10,"[Correct Version]: ./FileCompare [FilePath1] [FilePath2] (OutputFile)",10,0
-fileCompError:	db "Error occured while comparing files :(",10,0
-openFileError:	db "Error opening file stream",10,0
-debug:	db "arg1:%s",10,"arg2:%s",10,"Output:%s",10,0
+missingArgError: db "ERROR: unable to parse command line arguments.  Argument(s) missing.",10,"[Correct Version]: ./FileCompare [FilePath1] [FilePath2] (OutputFile)",10,0
+fileCompError:	db "ERROR: unable to compare files",10,0
+openFileError:	db "ERROR: unable to open file stream",10,0
+
+; Debug strings
+debug_current_cmd_args:	db "SUCCESS: parsed command line arguments...",10,"Source path:%s",10,"Target path:%s",10,"Output path:%s",10,0
 
 ; File IO mode strings
 FileRead:	db "r",0
@@ -48,6 +50,14 @@ main:
 .argsOK:
 	call ParseCmdArgs
 
+	;; debug
+	push dword [OutFilePtr]
+	push edi
+	push esi
+	push debug_current_cmd_args
+	call printf
+	add esp,16
+	;; end debug
 
 ; Open file streams.  Do not cross them!
 	call OpenFiles
@@ -62,18 +72,12 @@ main:
 ; Run the comparison test
 .compare:
 	push esi
+	call TreeWalker
+	add esp,4
+	
 	push edi
 	call TreeWalker
-	add esp,8
-	
-	;; debug
-	push dword [OutFilePtr]
-	push edi
-	push esi
-	push debug
-	call printf
-	add esp,16
-	;; end debug
+	add esp,4
 
 	;; int hexdump(file* src, file* dest, file* output)
 	push dword [OutFilePtr]

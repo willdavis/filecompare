@@ -1,12 +1,21 @@
-	;; Runs the linux file tree walker
-	;; and runs Hexdump comparison
-section .data
-debug:	db "File Tree Walking",10,0
+; Description: call ftw() on a file path and return the directory structure
+; Author: Bill Davis
+; Prototype: void TreeWalker(const char* file_path)
+
+; int ftw(
+;	const char *dirpath,
+;	int (*fn) (const char *fpath, const struct stat *sb, int typeflag),
+;	int nopenfd);
+; )
+
+[SECTION .bss]
+file_path: resd 1	;const char* file_path 
+
+[SECTION .data]
+debug_show_current_path: db "Checking directory structure: '%s'",10,0
 printCompare:	db "I found a file!",10,0
-
-printFTWComplete:	db "ftw is complete with no errors",10,0
-
-printFTWError:	db "Error in the file tree walker",10,0
+printFTWComplete:	db "SUCCESS: file tree walker completed without errors!",10,0
+printFTWError:	db "ERROR: file tree walker encountered a problem...",10,0
 
 	
 section .txt
@@ -15,17 +24,19 @@ section .txt
 
 	global TreeWalker
 
-	;; int TreeWalker(const char* fileName)
-	;; return val of -1 = error
 TreeWalker:
 	push ebp
-	mov ebp,esp
+	mov ebp,esp		;setup stack frame for function
+	
+	mov eax, [ebp+8]
+	mov dword [file_path], eax	;save file path in global variable
 
-	push debug
+	push dword [file_path]
+	push debug_show_current_path
 	call printf
-	add esp,4
+	add esp,8
 
-	xor eax,eax
+	xor eax,eax		;clear eax
 
 	;; call ftw()
 	mov ebx, 100
