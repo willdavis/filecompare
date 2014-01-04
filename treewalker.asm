@@ -1,5 +1,7 @@
-	;; Runs the linux file tree walker
-	;; and runs Hexdump comparison
+; Description: call ftw() on a file path and return the directory structure
+; Author: Bill Davis
+; Prototype: void TreeWalker(const char* file_path)
+
 section .data
 debug_show_current_path: db "Checking directory structure: %s",10,0
 printCompare:	db "I found a file!",10,0
@@ -13,8 +15,6 @@ section .txt
 
 	global TreeWalker
 
-	;; int TreeWalker(const char* file_path)
-	;; return -1 = error, 0 = complete
 TreeWalker:
 	push ebp
 	mov ebp,esp

@@ -15,7 +15,7 @@ fileCompError:	db "Error occured while comparing files :(",10,0
 openFileError:	db "Error opening file stream",10,0
 
 ; Debug strings
-debug_current_cmd_args:	db "Successfully parsed command line arguments...",10,"source path:%s",10,"target path:%s",10,"output path:%s",10,0
+debug_current_cmd_args:	db "Successfully parsed command line arguments...",10,"Source path:%s",10,"Target path:%s",10,"Output path:%s",10,0
 
 ; File IO mode strings
 FileRead:	db "r",0
