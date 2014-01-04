@@ -10,12 +10,12 @@ OutFilePtr:	resd 1		;output file pointer
 	
 [SECTION .data]
 ; Error strings
-missingArgError: db "Error parsing command line arguments.  Argument(s) missing.",10,"[Correct Version]: ./FileCompare [FilePath1] [FilePath2] (OutputFile)",10,0
-fileCompError:	db "Error occured while comparing files :(",10,0
-openFileError:	db "Error opening file stream",10,0
+missingArgError: db "ERROR: unable to parse command line arguments.  Argument(s) missing.",10,"[Correct Version]: ./FileCompare [FilePath1] [FilePath2] (OutputFile)",10,0
+fileCompError:	db "ERROR: unable to compare files",10,0
+openFileError:	db "ERROR: unable to open file stream",10,0
 
 ; Debug strings
-debug_current_cmd_args:	db "Successfully parsed command line arguments...",10,"Source path:%s",10,"Target path:%s",10,"Output path:%s",10,0
+debug_current_cmd_args:	db "SUCCESS: parsed command line arguments...",10,"Source path:%s",10,"Target path:%s",10,"Output path:%s",10,0
 
 ; File IO mode strings
 FileRead:	db "r",0

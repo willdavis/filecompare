@@ -2,8 +2,17 @@
 ; Author: Bill Davis
 ; Prototype: void TreeWalker(const char* file_path)
 
-section .data
-debug_show_current_path: db "Checking directory structure: %s",10,0
+; int ftw(
+;	const char *dirpath,
+;	int (*fn) (const char *fpath, const struct stat *sb, int typeflag),
+;	int nopenfd);
+; )
+
+[SECTION .bss]
+file_path: resd 1	;const char* file_path 
+
+[SECTION .data]
+debug_show_current_path: db "Checking directory structure: '%s'",10,0
 printCompare:	db "I found a file!",10,0
 printFTWComplete:	db "SUCCESS: file tree walker completed without errors!",10,0
 printFTWError:	db "ERROR: file tree walker encountered a problem...",10,0
@@ -17,14 +26,17 @@ section .txt
 
 TreeWalker:
 	push ebp
-	mov ebp,esp
+	mov ebp,esp		;setup stack frame for function
+	
+	mov eax, [ebp+8]
+	mov dword [file_path], eax	;save file path in global variable
 
-	push dword [ebp+8]
+	push dword [file_path]
 	push debug_show_current_path
 	call printf
 	add esp,8
 
-	xor eax,eax
+	xor eax,eax		;clear eax
 
 	;; call ftw()
 	mov ebx, 100
