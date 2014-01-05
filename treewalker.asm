@@ -13,7 +13,7 @@ file_path: resd 1	;const char* file_path
 
 [SECTION .data]
 debug_show_current_path: db "Checking directory structure: '%s'",10,0
-printCompare:	db "I found %s",10,0
+print_file_found:	db "Found: '%s' (typeflag: %i)",10,0
 printFTWComplete:	db "SUCCESS: directory structure scanned without errors!",10,0
 printFTWError:	db "ERROR: file tree walker encountered a problem...",10,0
 
@@ -41,7 +41,7 @@ TreeWalker:
 	;; call ftw()
 	mov ebx, 10
 	push ebx
-	push dword Compare
+	push dword callback
 	push dword [file_path]
 	call ftw
 	add esp, 12
@@ -63,14 +63,19 @@ TreeWalker:
 	leave
 	ret
 
-Compare:
+; int (*fn) (const char *fpath, const struct stat *sb, int typeflag)
+; [ebp+16] = int typeflag
+; [ebp+12] = const struct stat *sb
+; [ebp+8]  = const char *fpath
+callback:
 	push ebp
 	mov ebp,esp
 
-	push dword [ebp+12]
-	push printCompare
+	push dword [ebp+16]
+	push dword [ebp+8]
+	push print_file_found
 	call printf
-	add esp,8
+	add esp,12
 
 	mov eax,0
 	leave

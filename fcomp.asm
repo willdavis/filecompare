@@ -80,12 +80,12 @@ main:
 	add esp,4
 
 	;; int hexdump(file* src, file* dest, file* output)
-	push dword [OutFilePtr]
-	push dword [fDestPtr]
-	push dword [fSrcPtr]
-	call hexdump
-	add esp,12
-	cmp eax,0		;check for fatal errors in hexdump
+	;push dword [OutFilePtr]
+	;push dword [fDestPtr]
+	;push dword [fSrcPtr]
+	;call hexdump
+	;add esp,12
+	;cmp eax,0		;check for fatal errors in hexdump
 
 .close:
 	call CloseFiles
