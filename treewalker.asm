@@ -8,12 +8,12 @@
 ;	int nopenfd);
 ; )
 
+%define	MAX_OPEN_FILES 64	;more files = more memory, but faster ftw() speeds
+
 [SECTION .bss]
 source_file_path: resd 1	;const char* file_path 
 
 [SECTION .data]
-max_open_files: dd 20		; set maximum number of open files.
-
 debug_show_current_path: db "Checking directory structure: '%s'",10,0
 print_file_found:	db "Found: '%s' (typeflag: %i)",10,0
 printFTWComplete:	db "SUCCESS: directory structure scanned without errors!",10,0
@@ -46,7 +46,7 @@ TreeWalker:
 	;	int (*fn) (const char *fpath, const struct stat *sb, int typeflag),
 	;	int nopenfd);
 	; )
-	push dword [max_open_files]
+	push dword MAX_OPEN_FILES
 	push dword callback
 	push dword [source_file_path]
 	call ftw
