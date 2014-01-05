@@ -47,6 +47,7 @@ TreeWalker:
 	xor eax,eax							;clear eax
 
 	mov dword [file_data_array_size], 0	;initialize file_data_array_size to zero
+	mov dword [file_data_array_ptr], 0	;initialize file_data_array_ptr to null
 
 	; let the user know we're starting to walk the directory
 	push dword [source_file_path]
@@ -111,18 +112,22 @@ callback:
 	push dword [file_data_array_size]
 	call calloc
 	add esp,8
-	mov dword [file_data_array_ptr],eax
 	
-	;temporary debug! free the memory!
-	push dword [file_data_array_ptr]
-	call free
-	add esp,4
-	mov dword [file_data_array_ptr], 0
-
+	;check if calloc returned NULL
+	cmp eax, 0
+	
 	; get previous file_data[] if available
 	; copy previous file_data[] elements to new file_data[]
 	; add new data from this callback
+
 	; free previous file_data[]'s memory
+	push dword [file_data_array_ptr]
+	call free
+	add esp,4
+	
+	; replace ptr to old file_data[] with new file_data[]
+	mov dword [file_data_array_ptr], eax
+	xor eax, eax	;clear eax
 
 	mov eax,0
 	leave
