@@ -25,7 +25,8 @@ file_data_array_size:	resd 1	;int file_data_array_size
 [SECTION .data]
 ;debug strings;
 show_input_file_path: db "Checking directory structure: '%s'",10,0
-show_current_file_array: db "DEBUG: file array ptr: %x  array size: %i",10,0
+show_current_file_array: db "DEBUG: new array ptr: %x  array size: %i",10,0
+show_stored_array_ptr: db "DEBUG: stored array ptr: %x",10,0
 print_file_found:	db "Found: '%s' (size: UNKOWN bytes) (typeflag: %i)",10,0
 printFTWComplete:	db "SUCCESS: directory structure scanned without errors! (files found: %i)",10,0
 
@@ -125,9 +126,16 @@ callback:
 	
 	push eax	;save EAX
 
+	;debug: print the stored data array's ptr
+	call print_array
+	
+	pop eax
+	mov dword [file_data_array_ptr], eax
+	push eax
+
 	;debug: print the returned ptr and array size
 	push dword [file_data_array_size]
-	push esi
+	push eax
 	push show_current_file_array
 	call printf
 	add esp, 12
@@ -155,5 +163,20 @@ callback:
 	mov eax, -1			;exit with error code (-1)
 
 .callback_exit:
+	leave
+	ret
+	
+;debug to check array contents
+;void print_array()
+print_array:
+	push ebp
+	mov ebp,esp
+	
+	push dword [file_data_array_ptr]
+	push show_stored_array_ptr
+	call printf
+	add esp, 8
+	
+.print_array_exit:
 	leave
 	ret
