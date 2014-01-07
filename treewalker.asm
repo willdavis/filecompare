@@ -23,9 +23,14 @@ file_data_array_size:	resd 1	;int file_data_array_size
 ; }
 
 [SECTION .data]
-debug_show_current_path: db "Checking directory structure: '%s'",10,0
-print_file_found:	db "Found: '%s' (typeflag: %i)",10,0
+;debug strings;
+show_input_file_path: db "Checking directory structure: '%s'",10,0
+show_current_file_array: db "DEBUG: file array ptr: %x  array size: %i",10,0
+print_file_found:	db "Found: '%s' (size: UNKOWN bytes) (typeflag: %i)",10,0
 printFTWComplete:	db "SUCCESS: directory structure scanned without errors! (files found: %i)",10,0
+
+;error strings
+calloc_error: db "ERROR: calloc() returned NULL.  Unable to allocate required memory!",10,0
 printFTWError:	db "ERROR: file tree walker encountered a problem...",10,0
 
 	
@@ -51,7 +56,7 @@ TreeWalker:
 
 	; let the user know we're starting to walk the directory
 	push dword [source_file_path]
-	push debug_show_current_path
+	push show_input_file_path
 	call printf
 	add esp,8
 
@@ -97,9 +102,9 @@ callback:
 	push ebp
 	mov ebp,esp
 	
-	; display file path and typeflag
-	push dword [ebp+16]
-	push dword [ebp+8]
+	; display file path, size, and typeflag
+	push dword [ebp+16]		;typeflag
+	push dword [ebp+8]		;path
 	push print_file_found
 	call printf
 	add esp,12
@@ -113,22 +118,42 @@ callback:
 	call calloc
 	add esp,8
 	
+	;EAX = void *ptr to new array memory address
 	;check if calloc returned NULL
 	cmp eax, 0
+	je .callback_calloc_error
+	
+	push eax	;save EAX
+
+	;debug: print the returned ptr and array size
+	push dword [file_data_array_size]
+	push esi
+	push show_current_file_array
+	call printf
+	add esp, 12
+	
+	pop eax		;restore EAX
 	
 	; get previous file_data[] if available
 	; copy previous file_data[] elements to new file_data[]
 	; add new data from this callback
 
-	; free previous file_data[]'s memory
-	push dword [file_data_array_ptr]
+	; free the memory allocated by calloc
+	; void free(void *ptr)
+	push eax
 	call free
 	add esp,4
-	
-	; replace ptr to old file_data[] with new file_data[]
-	mov dword [file_data_array_ptr], eax
-	xor eax, eax	;clear eax
 
 	mov eax,0
+	jmp .callback_exit
+	
+.callback_calloc_error:
+	push calloc_error	;print error message
+	call printf
+	add esp, 4
+	
+	mov eax, -1			;exit with error code (-1)
+
+.callback_exit:
 	leave
 	ret
