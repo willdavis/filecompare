@@ -8,38 +8,37 @@
 ;	int nopenfd);
 ; )
 
-%define	MAX_OPEN_FILES 64			;more files = more memory, but faster ftw() speeds
-%define SIZEOF_FILE_DATA_ELEMENT 12	;sizeof struct data{} (12 bytes)
+%define	MAX_OPEN_FILES 64		;more files = more memory, but faster ftw() speeds
+%define SIZEOF_FILE_DATA 12		;file_data structure size in bytes
 
 [SECTION .bss]
-source_file_path: 		resd 1	;const char* file_path
-file_data_array_ptr:	resd 1	;struct data file_data[]*
-file_data_array_size:	resd 1	;int file_data_array_size
+source_file_path: 	resd 1	;const char* file_path
+file_list:			resd 1	;file_data* start_node
+file_list_size:		resd 1	;int file_data_array_size
 
-; struct data {
+; struct file_data {
+;	struct file_data* next
 ;	const char *fpath
-;	const struct stat *sb
 ;	int typeflag
 ; }
 
 [SECTION .data]
 ;debug strings;
-show_input_file_path: db "Checking directory structure: '%s'",10,0
-show_current_file_array: db "DEBUG: new array ptr: %x  array size: %i",10,0
-show_stored_array_ptr: db "DEBUG: stored array ptr: %x",10,0
-print_file_found:	db "Found: '%s' (size: UNKOWN bytes) (typeflag: %i)",10,0
-printFTWComplete:	db "SUCCESS: directory structure scanned without errors! (files found: %i)",10,0
+print_source_file_path: db "Checking directory structure: '%s'",10,0
+print_file_list: 		db "DEBUG: file list pointer: %x  list size: %i",10,0
+print_file_found:		db "Found: '%s' (size: UNKOWN bytes) (typeflag: %i)",10,0
+print_ftw_success:		db "SUCCESS: directory structure scanned without errors! (files found: %i)",10,0
 
 ;error strings
-calloc_error: db "ERROR: calloc() returned NULL.  Unable to allocate required memory!",10,0
-printFTWError:	db "ERROR: file tree walker encountered a problem...",10,0
+print_malloc_error: 	db "ERROR: malloc() returned NULL.  Unable to allocate required memory!",10,0
+print_ftw_error:		db "ERROR: file tree walker encountered a problem...",10,0
 
 	
 section .txt
 	extern ftw
 	extern printf
 	
-	extern calloc
+	extern malloc
 	extern free
 
 	global TreeWalker
@@ -52,12 +51,12 @@ TreeWalker:
 	mov dword [source_file_path], eax	;save const char* file_path for later
 	xor eax,eax							;clear eax
 
-	mov dword [file_data_array_size], 0	;initialize file_data_array_size to zero
-	mov dword [file_data_array_ptr], 0	;initialize file_data_array_ptr to null
+	mov dword [file_list], 0		;initialize file list pointer to NULL
+	mov dword [file_list_size], 0	;initialize file list size to zero
 
 	; let the user know we're starting to walk the directory
 	push dword [source_file_path]
-	push show_input_file_path
+	push print_source_file_path
 	call printf
 	add esp,8
 
@@ -79,15 +78,15 @@ TreeWalker:
 	je .error
 
 	; yay! no errors.  let the user know and then exit.
-	push dword [file_data_array_size]
-	push printFTWComplete
+	push dword [file_list_size]
+	push print_ftw_success
 	call printf
 	add esp,8
 	jmp .exit
 
 .error:
 	; errors were present.  warn the user and then exit.
-	push printFTWError
+	push print_ftw_error
 	call printf
 	add esp,4
 
@@ -101,82 +100,59 @@ TreeWalker:
 ; [ebp+8]  = const char *fpath
 callback:
 	push ebp
-	mov ebp,esp
+	mov ebp,esp	
+	
+	inc dword [file_list_size]	;increment the list size
+	
+	; allocate memory for new file_data structure
+	push dword SIZEOF_FILE_DATA
+	call malloc		;void *malloc(size_t size);
+	add esp,4
+	
+	;EAX = void *ptr to new array memory address
+	;check if malloc returned NULL
+	cmp eax, 0
+	je .callback_malloc_error
+	
+	;save root file_data* node to file_data->next [eax]
+	mov edx, dword [file_list]
+	mov dword [eax], edx
+	
+	;save const char *fpath to file_data->fpath [eax+4]
+	mov ebx, dword [ebp+8]
+	mov dword [eax+4], ebx
+	
+	;save int typeflag to file_data->typeflag [eax+8]
+	mov ecx, dword [ebp+16]
+	mov dword [eax+8], ecx
+	
+	;set the new node as the root node
+	mov dword [file_list], eax
 	
 	; display file path, size, and typeflag
-	push dword [ebp+16]		;typeflag
-	push dword [ebp+8]		;path
+	push dword [eax+8]		;typeflag
+	push dword [eax+4]		;path
 	push print_file_found
 	call printf
 	add esp,12
-	
-	; increment size and allocate new file_data[] with calloc
-	inc dword [file_data_array_size]
-	
-	; void *calloc(size_t nmemb, size_t size);
-	push dword SIZEOF_FILE_DATA_ELEMENT
-	push dword [file_data_array_size]
-	call calloc
-	add esp,8
-	
-	;EAX = void *ptr to new array memory address
-	;check if calloc returned NULL
-	cmp eax, 0
-	je .callback_calloc_error
-	
-	push eax	;save EAX
-
-	;debug: print the stored data array's ptr
-	call print_array
-	
-	pop eax
-	mov dword [file_data_array_ptr], eax
-	push eax
 
 	;debug: print the returned ptr and array size
-	push dword [file_data_array_size]
-	push eax
-	push show_current_file_array
+	push dword [file_list_size]
+	push dword [file_list]
+	push print_file_list
 	call printf
 	add esp, 12
-	
-	pop eax		;restore EAX
-	
-	; get previous file_data[] if available
-	; copy previous file_data[] elements to new file_data[]
-	; add new data from this callback
-
-	; free the memory allocated by calloc
-	; void free(void *ptr)
-	push eax
-	call free
-	add esp,4
 
 	mov eax,0
 	jmp .callback_exit
 	
-.callback_calloc_error:
-	push calloc_error	;print error message
+.callback_malloc_error:
+	push print_malloc_error	;print error message
 	call printf
 	add esp, 4
 	
 	mov eax, -1			;exit with error code (-1)
 
 .callback_exit:
-	leave
-	ret
-	
-;debug to check array contents
-;void print_array()
-print_array:
-	push ebp
-	mov ebp,esp
-	
-	push dword [file_data_array_ptr]
-	push show_stored_array_ptr
-	call printf
-	add esp, 8
-	
-.print_array_exit:
 	leave
 	ret
