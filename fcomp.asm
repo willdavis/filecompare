@@ -16,6 +16,7 @@ openFileError:	db "ERROR: unable to open file stream",10,0
 
 ; Debug strings
 debug_current_cmd_args:	db "SUCCESS: parsed command line arguments...",10,"Source path:%s",10,"Target path:%s",10,"Output path:%s",10,0
+debug_print_returned_list: db "DEBUG: treewalker returned file list pointer: %x",10,0
 
 ; File IO mode strings
 FileRead:	db "r",0
@@ -75,9 +76,21 @@ main:
 	call TreeWalker
 	add esp,4
 	
+	push eax
+	push debug_print_returned_list
+	call printf
+	add esp,8
+	
+	xor eax,eax		;clear eax
+	
 	push edi
 	call TreeWalker
 	add esp,4
+	
+	push eax
+	push debug_print_returned_list
+	call printf
+	add esp,8
 
 	;; int hexdump(file* src, file* dest, file* output)
 	;push dword [OutFilePtr]

@@ -82,6 +82,8 @@ TreeWalker:
 	push print_ftw_success
 	call printf
 	add esp,8
+	
+	mov eax, dword [file_list]
 	jmp .exit
 
 .error:
