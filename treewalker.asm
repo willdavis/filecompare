@@ -101,7 +101,7 @@ TreeWalker:
 ; [ebp+8]  = const char *fpath
 callback:
 	push ebp
-	mov ebp,esp	
+	mov ebp,esp
 	
 	inc dword [file_list_size]	;increment the list size
 	

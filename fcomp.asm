@@ -115,6 +115,9 @@ PrintFileList:
 .print_file_list_loop:
 	push eax			;store EAX so printf() doesn't destroy it
 	
+	cmp dword [eax+8],1	;check if the current typeflag is a directory (1)
+	je .print_file_list_check_next_node	;don't include directories
+	
 	; print the current file_list* node
 	push dword [eax+8]
 	push dword [eax+4]
@@ -122,6 +125,7 @@ PrintFileList:
 	call printf
 	add esp,12
 	
+.print_file_list_check_next_node:
 	pop eax				;restore EAX
 	cmp dword [eax], 0	;check if the next node is NULL
 	je .print_file_list_exit
