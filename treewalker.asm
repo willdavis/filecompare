@@ -1,6 +1,12 @@
 ; Description: call ftw() on a file path and return the directory structure
 ; Author: Bill Davis
-; Prototype: struct data file_data[]* TreeWalker(const char* file_path)
+; Prototype: struct file_list* TreeWalker(const char* file_path)
+
+; struct file_list {
+;	struct file_list* next
+;	const char *fpath
+;	int typeflag
+; }
 
 ; int ftw(
 ;	const char *dirpath,
@@ -9,30 +15,23 @@
 ; )
 
 %define	MAX_OPEN_FILES 64		;more files = more memory, but faster ftw() speeds
-%define SIZEOF_FILE_DATA 12		;file_data structure size in bytes
+%define SIZEOF_file_list 12		;file_list structure size in bytes
 
 [SECTION .bss]
 source_file_path: 	resd 1	;const char* file_path
-file_list:			resd 1	;file_data* start_node
-file_list_size:		resd 1	;int file_data_array_size
-
-; struct file_data {
-;	struct file_data* next
-;	const char *fpath
-;	int typeflag
-; }
+file_list:			resd 1	;file_list* start_node
+file_list_size:		resd 1	;int file_list_size
 
 [SECTION .data]
 ;debug strings;
 print_source_file_path: db "Checking directory structure: '%s'",10,0
 print_file_list: 		db "DEBUG: file list pointer: %x  list size: %i",10,0
 print_file_found:		db "Found: '%s' (size: UNKOWN bytes) (typeflag: %i)",10,0
-print_ftw_success:		db "SUCCESS: directory structure scanned without errors! (files found: %i)",10,0
+print_ftw_success:		db "SUCCESS: directory structure scanned! (files found: %i)",10,0
 
 ;error strings
 print_malloc_error: 	db "ERROR: malloc() returned NULL.  Unable to allocate required memory!",10,0
 print_ftw_error:		db "ERROR: file tree walker encountered a problem...",10,0
-
 	
 section .txt
 	extern ftw
@@ -106,8 +105,8 @@ callback:
 	
 	inc dword [file_list_size]	;increment the list size
 	
-	; allocate memory for new file_data structure
-	push dword SIZEOF_FILE_DATA
+	; allocate memory for new file_list structure
+	push dword SIZEOF_file_list
 	call malloc		;void *malloc(size_t size);
 	add esp,4
 	
@@ -116,15 +115,15 @@ callback:
 	cmp eax, 0
 	je .callback_malloc_error
 	
-	;save root file_data* node to file_data->next [eax]
+	;save root file_list* node to file_list->next [eax]
 	mov edx, dword [file_list]
 	mov dword [eax], edx
 	
-	;save const char *fpath to file_data->fpath [eax+4]
+	;save const char *fpath to file_list->fpath [eax+4]
 	mov ebx, dword [ebp+8]
 	mov dword [eax+4], ebx
 	
-	;save int typeflag to file_data->typeflag [eax+8]
+	;save int typeflag to file_list->typeflag [eax+8]
 	mov ecx, dword [ebp+16]
 	mov dword [eax+8], ecx
 	

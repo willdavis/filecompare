@@ -17,6 +17,7 @@ openFileError:	db "ERROR: unable to open file stream",10,0
 ; Debug strings
 debug_current_cmd_args:	db "SUCCESS: parsed command line arguments...",10,"Source path:%s",10,"Target path:%s",10,"Output path:%s",10,0
 debug_print_returned_list: db "DEBUG: treewalker returned file list pointer: %x",10,0
+debug_print_file_list_item: db "DEBUG: path => '%s' type => %i",10,0
 
 ; File IO mode strings
 FileRead:	db "r",0
@@ -77,9 +78,8 @@ main:
 	add esp,4
 	
 	push eax
-	push debug_print_returned_list
-	call printf
-	add esp,8
+	call PrintFileList
+	add esp,4
 	
 	xor eax,eax		;clear eax
 	
@@ -88,9 +88,8 @@ main:
 	add esp,4
 	
 	push eax
-	push debug_print_returned_list
-	call printf
-	add esp,8
+	call PrintFileList
+	add esp,4
 
 	;; int hexdump(file* src, file* dest, file* output)
 	;push dword [OutFilePtr]
@@ -104,6 +103,35 @@ main:
 	call CloseFiles
 
 .exit:
+	leave
+	ret
+	
+; void PrintFileList(file_list* start_node)
+PrintFileList:
+	push ebp
+	mov ebp,esp
+	
+	mov eax, dword [ebp+8]
+.print_file_list_loop:
+	push eax			;store EAX so printf() doesn't destroy it
+	
+	; print the current file_list* node
+	push dword [eax+8]
+	push dword [eax+4]
+	push debug_print_file_list_item
+	call printf
+	add esp,12
+	
+	pop eax				;restore EAX
+	cmp dword [eax], 0	;check if the next node is NULL
+	je .print_file_list_exit
+	
+	;not a leaf node.  we must go deeper!
+	mov ebx, dword [eax]	;store node->next in EBX
+	mov eax, ebx			;set EAX to node->next for the next loop
+	jmp .print_file_list_loop
+	
+.print_file_list_exit:
 	leave
 	ret
 
